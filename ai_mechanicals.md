@@ -15,14 +15,14 @@ An LLM model go through these following step:
     2, Tokenize:
         Input: Take the user input
         Process: From the user input, change it to ids
-        Output: Each token was labeled (shaped T)
+        Output: Each token was map text (shaped T)
         Reason: To label each token with an different IDs for AI to later mark them and change them to vector to process with
 
     3, Embedding:
         Input: Labeled token 
             (input shape of this step is pure T)
         Process: Change token to vector form, usually a lot of dimension. 
-            (By Using an Dictionary shaped (V,d) to find the words and turn them into an IDS )
+            (By Using an Dictionary shaped (V,d) to look up for the words and turn them into an vector)
         Output: Vectorized token 
             (Exp: Embedding matrix E have a shave of [T,d])
         Reason: Reason: By turning tokens into vectors, the model can process them with neural network operations. Later, after the Transformer blocks, the model projects the final hidden vector back into vocabulary space to predict the next token.
@@ -89,4 +89,6 @@ An LLM model go through these following step:
         Output: Final text answer.
         Reason: The model generates token IDs, but users need normal text.
 
+
 In older model: Adding position is outside transformer block
+https://bbycroft.net/llm?utm_source=chatgpt.com
