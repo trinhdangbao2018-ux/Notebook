@@ -12,13 +12,10 @@ The pipeline of RAG:
 
     2, Retriever:
         Input: The user query
-        Process: Turn the query into a vector (embedding), then run a similarity search
-            against the knowledge base (a vector database of pre-embedded document chunks),
-            and return the top-k most relevant chunks
+        Process: Turn the query into a vector (embedding), then run a similarity search against the knowledge base (a vector database of pre-embedded document chunks), and return the top-k most relevant chunks
         Output: The relevant information/chunks that fit the context of the query
         Reason: To find additional information the LLM does not have (fresh or private data)
-        Note: Matching is semantic (by meaning/similarity), not keyword. So "car" can
-            match "vehicle" even without sharing words
+        Note: Matching is semantic (by meaning/similarity), not keyword. So "car" can match "vehicle" even without sharing words
 
     3, LLM (Generation):
         Input: The original query + the retrieved chunks, combined into one prompt
