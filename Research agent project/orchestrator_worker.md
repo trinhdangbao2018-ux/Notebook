@@ -1,3 +1,19 @@
+A. Worker roles 
+1. Research/search worker — runs web search + fetch, returns raw findings with source metadata
+2. Retrieval/RAG worker — queries a local corpus or uploaded files (embeddings/index), returns relevant chunks + provenance
+3. Source analysis worker — deep-reads a single URL/doc, extracts structured claims/evidence from it (as opposed to a broad search)
+4. Critique worker — reviews evidence for gaps, bias, contradictions, weak sourcing; doesn't add new evidence
+5. Citation verifier — cross-checks a specific claim against an independent source before it ships
+6. Writing/formatting worker — turns merged evidence into report prose/sections (note: your CLAUDE.md says the orchestrator synthesizes — so this role, if it exists separately, would be for final formatting/style passes, not merging evidence)
+
+B. Execution patterns
+
+1. Pure function / single-shot worker — one prompt, one tool call (or none), structured output. Simplest, cheapest, easiest to test with fakes.
+2. Fixed pipeline worker — hardcoded stage sequence (e.g., fetch → clean → extract → summarize). No LLM-driven branching; predictable cost/latency.
+3. Tool-calling agentic worker — its own small agent loop (plan → call tool → observe → repeat until done or budget hit). Needed when the worker must decide how many searches or pages to look at.
+4. Plan-execute-reflect worker — agentic loop plus a self-check step before returning (e.g., "did I actually answer the sub-question?"). More expensive; usually reserved for high-value or ambiguous sub-tasks.
+
+More details:
 ┌─────┬───────────────────────┬──────────────────────────────────────────────┬─────────────────────┬─────────────────────────────────────────────┬──────────────────────────────────────────────────┐
 │  #  │        Pattern        │                Internal shape                │      Uses LLM?      │             Best-fit capability             │                  Main risk/cost                  │
 ├─────┼───────────────────────┼──────────────────────────────────────────────┼─────────────────────┼─────────────────────────────────────────────┼──────────────────────────────────────────────────┤
@@ -48,3 +64,12 @@
 │ 14  │  SDK                  │ built-in agent runtime (Claude Agent SDK,    │ Yes, vendor-managed │ Fast prototyping only                       │ project's provider-neutral requirement (already  │
 │     │                       │ OpenAI Agents SDK)                           │                     │                                             │ ruled out for the orchestrator in ADR_001)       │
 └─────┴───────────────────────┴──────────────────────────────────────────────┴─────────────────────┴─────────────────────────────────────────────┴──────────────────────────────────────────────────┘
+
+C. Cross-cutting design dimensions
+- Contract — strict input/output schema (task spec in; evidence + sources + confidence + limitations out), matching communication/contracts.py
+- Capability/tool access — which tools each worker type is allowed to call (search API, browser fetch, RAG index, none) — this is what capability_registry.py and worker_registry.py are for
+- Statefulness — stateless per-task (safe for parallelism) vs. maintains scratchpad across retries within one job
+- Isolation — each worker call gets its own clean context window, no shared mutable state (matches your "each research job has a clean, explicit context" rule)
+- Model/provider binding — worker declares what it needs (reasoning vs. cheap extraction), provider boundary picks the model — keeps workers swappable
+- Failure handling — does the worker retry internally, or does it fail fast and let the orchestrator's retry_policy/circuit_breaker handle it? (Your stubs suggest orchestrator-owned resilience — workers stay simple.)
+- Budget enforcement — token/time/source caps passed into the worker call, not self-imposed, so the orchestrator's budget tracker stays authoritative
